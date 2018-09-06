@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type Gochannel struct {
+type ChanTask struct {
 	closeSend    chan struct{}
 	closeRecv    chan struct{}
 	ret          chan interface{}
@@ -19,18 +19,18 @@ type Gochannel struct {
 	ended        bool
 }
 
-type SenderFunc func(task *Gochannel, args ...interface{})
-type ReceiverFunc func(task *Gochannel, args ...interface{})
+type SenderFunc func(task *ChanTask, args ...interface{})
+type ReceiverFunc func(task *ChanTask, args ...interface{})
 
 // First create a task. The task manage a chan by which you can send/receive any data.
 // Then add some senders which can send data to this chan and add some receivers to receive these data from it.
 // Finally call task.Start() and senders and receivers will run on goroutines automatically.
 // You can determine the buffer size of the chan and how many senders can run at the same time at most.
-func GoChannelTask(chanBufferSize, routineNum int) *Gochannel {
+func CreateChanTask(chanBufferSize, routineNum int) *ChanTask {
 	if routineNum <= 0 {
 		routineNum = 1
 	}
-	return &Gochannel{
+	return &ChanTask{
 		closeSend:   make(chan struct{}),
 		closeRecv:   make(chan struct{}),
 		ret:         make(chan interface{}, chanBufferSize),
@@ -41,7 +41,7 @@ func GoChannelTask(chanBufferSize, routineNum int) *Gochannel {
 // Please be careful of the `args`. If you use a param in the SenderFunc and the param is from outside of the
 // SenderFunc, you'd better pass the param by the `args ...interface{}` unless the param is stable which means you must
 // make sure it will not change until task stops.
-func (task *Gochannel) AddSender(senderFunc SenderFunc, args ...interface{}) error {
+func (task *ChanTask) AddSender(senderFunc SenderFunc, args ...interface{}) error {
 	if task.ended {
 		return ErrTaskStoped
 	}
@@ -54,7 +54,7 @@ func (task *Gochannel) AddSender(senderFunc SenderFunc, args ...interface{}) err
 }
 
 // Please be careful of the `args`. @see AddSender
-func (task *Gochannel) AddReceiver(receiverFunc ReceiverFunc, args ...interface{}) error {
+func (task *ChanTask) AddReceiver(receiverFunc ReceiverFunc, args ...interface{}) error {
 	if task.ended {
 		return ErrTaskStoped
 	}
@@ -64,10 +64,11 @@ func (task *Gochannel) AddReceiver(receiverFunc ReceiverFunc, args ...interface{
 
 	task.receivers = append(task.receivers, receiverFunc)
 	task.receiverArgs = append(task.receiverArgs, args)
+
 	return nil
 }
 
-func (task *Gochannel) Start() error {
+func (task *ChanTask) Start() error {
 	if task.ended {
 		return ErrTaskStoped
 	}
@@ -128,7 +129,7 @@ func (task *Gochannel) Start() error {
 	return nil
 }
 
-func (task *Gochannel) IsSendStopped() bool {
+func (task *ChanTask) IsSendStopped() bool {
 	select {
 	case <-task.closeSend:
 		return true
@@ -137,7 +138,7 @@ func (task *Gochannel) IsSendStopped() bool {
 	}
 }
 
-func (task *Gochannel) Send(data interface{}) (ok bool) {
+func (task *ChanTask) Send(data interface{}) (ok bool) {
 	select {
 	case <-task.closeSend:
 		return false
@@ -149,7 +150,7 @@ func (task *Gochannel) Send(data interface{}) (ok bool) {
 
 // When StopSend is called, all the running Senders will
 // stop send data and the waiting Senders will not run.
-func (task *Gochannel) StopSend() {
+func (task *ChanTask) StopSend() {
 	select {
 	case <-task.closeSend:
 	default:
@@ -157,7 +158,7 @@ func (task *Gochannel) StopSend() {
 	}
 }
 
-func (task *Gochannel) IsReceiveStopped() bool {
+func (task *ChanTask) IsReceiveStopped() bool {
 	select {
 	case <-task.closeRecv:
 		return true
@@ -166,7 +167,7 @@ func (task *Gochannel) IsReceiveStopped() bool {
 	}
 }
 
-func (task *Gochannel) Receive() (data interface{}, ok bool) {
+func (task *ChanTask) Receive() (data interface{}, ok bool) {
 	select {
 	case <-task.closeRecv:
 		return nil, false
@@ -181,7 +182,7 @@ func (task *Gochannel) Receive() (data interface{}, ok bool) {
 
 // When StopReceive is called, all the running Receivers will
 // receive a nil data and the waring Receivers will not run.
-func (task *Gochannel) StopReceive() {
+func (task *ChanTask) StopReceive() {
 	select {
 	case <-task.closeRecv:
 	default:
