@@ -77,7 +77,7 @@ func main() {
 		task.Send(id)
 	}
 
-	var f3 chantask.SenderFunc = func(task *chantask.ChanTask, args ...interface{}) {
+	var f3 chantask.ReceiverFunc = func(task *chantask.ChanTask, args ...interface{}) {
 		v, ok := task.Receive()
 		if ok {
 			fmt.Println("f3 got from", v)
