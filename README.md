@@ -28,8 +28,21 @@ task.AddSender(func () { police3 to find in Europe.           IF `find one` THEN
 task.AddSender(func () { police4 to find in China.            IF `find one` THEN `task.Send(it)`. })
 ...
 
-task.AddReceiver(func () {  LOOP : IF `the task.Receive() seems not that bad` THEN `push it to Trump's head && task.StopSend() && break` ELSE `continue`. })
-task.AddReceiver(func () { IF `runs out of money || Trump's term of service is over` THEN `task.StopSend() && task.StopReceive()`. })
+task.AddReceiver(func () {  
+	for {
+		IF `the task.Receive() seems not that bad` {
+			`push it to Trump's head`
+			`task.StopSend()`
+			`break` 
+		} 
+	}
+})
+task.AddReceiver(func () { 
+	IF `runs out of money` || `Trump's term of service is over` {
+		`task.StopSend()`
+		`task.StopReceive()`.
+	}
+})
 
 task.Start()
 ```
