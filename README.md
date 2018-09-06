@@ -71,11 +71,12 @@ func main() {
 		id := args[0].(string)
 		task.Send(id)
 	}
-	var f2 chantask.SenderFunc
-	f2 = func(task *chantask.ChanTask, args ...interface{}) {
+
+	f2 := func(task *chantask.ChanTask, args ...interface{}) {
 		id := args[0].(string)
 		task.Send(id)
 	}
+
 	var f3 chantask.SenderFunc = func(task *chantask.ChanTask, args ...interface{}) {
 		v, ok := task.Receive()
 		if ok {
@@ -85,13 +86,13 @@ func main() {
 		}
 	}
 
-	// At most 10 senders can send data to chan at the same time.
-	// At most 10 senders will be running by goroutine at the same time
+	// At most 10 (it's up to you) senders can send data to chan at the same time.
+	// At most 10 (it's up to you) senders will be running by goroutine at the same time.
 	// If there are over 10 senders, other senders will wait until former sender func return.
 	task := chantask.CreateChanTask(10, 10) 
 
 	task.AddSender(f1, "id:1")
-	task.AddSender(f2, "id:2")
+	task.AddSender(chantask.SenderFunc(f2), "id:2")
 
 	task.AddReceiver(chantask.ReceiverFunc(f3))
 	task.AddReceiver(chantask.ReceiverFunc(func(task *chantask.ChanTask, args ...interface{}) {
@@ -122,4 +123,4 @@ f3 got noting
 f5 got from id:2 . sum: 15
 f4 got from id:1
 ```
-output may be different from above because receivers are competitors for the data in chan.
+output may be different from above because receivers are competitors for the data in the task.
