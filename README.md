@@ -123,4 +123,4 @@ f3 got noting
 f5 got from id:2 . sum: 15
 f4 got from id:1
 ```
-output may be different from above because receivers are competitors for the data in the task.
+output may be different from above because all the sender funcs and receiver funcs are running by goroutine so the order is unexpectable.
